@@ -1,15 +1,18 @@
 name: racing-collect
 
-# Pull GB/IRE racecards + odds every 15 min across the racing day. Each runner's
-# per-bookmaker odds (and the API's own price history) are captured, so we build
-# a full movement series. Idempotent: repeated polls never duplicate.
+# Poll GB/IRE racecards + odds every 30 minutes, around the clock, pulling
+# TODAY and TOMORROW's cards. Tips arrive ~5pm the day before, so tomorrow's
+# card is under watch from the evening before right through to each race's
+# off-time. Finished races drop out of the feed automatically, so we stop
+# polling their odds. Per-bookmaker price history is captured -> odds movement.
+# Idempotent: repeated polls only add genuine price changes, never duplicates.
 on:
   schedule:
-    - cron: "*/30 10-20 * * *"     # every 30 min, 10:00-20:59 UTC
+    - cron: "*/30 * * * *"        # every 30 minutes
   workflow_dispatch:
     inputs:
       date:
-        description: "Override date (YYYY-MM-DD), blank = today"
+        description: "Override single date (YYYY-MM-DD), blank = today+tomorrow"
         required: false
         default: ""
 
@@ -28,7 +31,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Collect racecards + odds
+      - name: Collect racecards + odds (today + tomorrow)
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -36,5 +39,6 @@ jobs:
           RACING_API_PASSWORD:  ${{ secrets.RACING_API_PASSWORD }}
           RACING_MODE:          "racecards"
           REGION_CODES:         "gb,ire"
+          DAYS_AHEAD:           "1"
           DATE:                 ${{ github.event.inputs.date }}
         run: python racing.py
