@@ -1,0 +1,38 @@
+name: racing-results
+
+# Pull GB/IRE results once racing has settled.
+on:
+  schedule:
+    - cron: "0 23 * * *"          # 23:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Override date (YYYY-MM-DD), blank = today"
+        required: false
+        default: ""
+
+concurrency:
+  group: racing-results
+  cancel-in-progress: false
+
+jobs:
+  results:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Collect results
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RACING_API_USERNAME:  ${{ secrets.RACING_API_USERNAME }}
+          RACING_API_PASSWORD:  ${{ secrets.RACING_API_PASSWORD }}
+          RACING_MODE:          "results"
+          REGION_CODES:         "gb,ire"
+          DATE:                 ${{ github.event.inputs.date }}
+        run: python racing.py
