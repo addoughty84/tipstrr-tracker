@@ -50,6 +50,8 @@ BACKFILL_DAYS = int(os.environ.get("BACKFILL_DAYS", "0"))   # 0 = no age limit (
 SKIP_STATS    = os.environ.get("SKIP_STATS", "0") == "1"
 MAX_RUNTIME_MIN = float(os.environ.get("MAX_RUNTIME_MIN", "0"))  # 0 = unlimited
 ONLY_SLUGS    = [s for s in os.environ.get("ONLY_SLUGS", "").split(",") if s]
+SHARD_INDEX   = int(os.environ.get("SHARD_INDEX", "0"))   # this job's slice
+SHARD_COUNT   = int(os.environ.get("SHARD_COUNT", "1"))   # total slices (parallel jobs)
 
 RESULT_MAP = {1: "won", 2: "half-won", 3: "lost", 4: "half-lost", 5: "void"}
 
@@ -289,7 +291,9 @@ def main() -> int:
     known = known_slugs()
     discovered = set(ONLY_SLUGS) if ONLY_SLUGS else discover_slugs()
     targets = sorted(discovered | known)
-    new_slugs = discovered - known
+    if SHARD_COUNT > 1:
+        targets = [t for i, t in enumerate(targets) if i % SHARD_COUNT == SHARD_INDEX]
+    new_slugs = (discovered - known) & set(targets)
     print(f"Discovered {len(discovered)}, new {len(new_slugs)}, tracking {len(targets)}.")
 
     _t0 = time.monotonic()
