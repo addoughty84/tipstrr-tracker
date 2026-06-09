@@ -1,24 +1,26 @@
 name: tipstrr-backfill
 
-# Hands-off staged backfill. Runs every 3 hours and advances the
-# 10 -> 30 -> 60 -> 90 -> 180 -> lifetime windows. Each run works for up to
-# ~5 hours then stops cleanly; the next run resumes (idempotent, so finished
-# work is skipped). Once history is complete you can disable this workflow —
-# the daily workflow keeps everything current.
+# One-time, PARALLEL staged backfill. Splits all tipsters across 12 jobs that
+# run at the same time, so full history lands in ~1-3 hours instead of days.
+# Each shard still runs the freshest-first windows (10 -> 30 -> ... -> lifetime)
+# for its ~1/12th of tipsters. Idempotent, so re-dispatching just skips done work.
+# Manual only (no schedule) to conserve Actions minutes — the daily workflow
+# keeps everything current afterwards.
 
 on:
-  schedule:
-    - cron: "15 */3 * * *"      # every 3 hours
   workflow_dispatch:
-
-concurrency:
-  group: tipstrr-backfill
-  cancel-in-progress: false
 
 jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    concurrency:
+      group: tipstrr-backfill-${{ matrix.shard }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,9 +28,11 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Run staged backfill (time-boxed)
+      - name: Run staged backfill (shard ${{ matrix.shard }} of 12)
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SHARD_INDEX:          ${{ matrix.shard }}
+          SHARD_COUNT:          "12"
           MAX_RUNTIME_MIN:      "300"
         run: python backfill.py
