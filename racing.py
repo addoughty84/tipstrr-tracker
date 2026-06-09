@@ -34,6 +34,7 @@ BASE     = os.environ.get("RACING_API_BASE", "https://api.theracingapi.com")
 MODE     = os.environ.get("RACING_MODE", "racecards")          # racecards | results
 REGIONS  = [r for r in os.environ.get("REGION_CODES", "gb,ire").split(",") if r]
 DATE     = os.environ.get("DATE", "")                          # YYYY-MM-DD; blank=today(UTC)
+DAYS_AHEAD = int(os.environ.get("DAYS_AHEAD", "1"))            # also pull this many days ahead (tomorrow=1)
 REQ_DELAY = float(os.environ.get("REQUEST_DELAY", "0.3"))      # politeness (<=5/s)
 PAGE     = int(os.environ.get("PAGE_SIZE", "50"))
 
@@ -78,8 +79,7 @@ def ts(x):
         return None
 
 # --------------------------------------------------------------------------- #
-def run_racecards() -> dict:
-    day = today()
+def _collect_day(day: str) -> tuple:
     races = runners = odds_rows = 0
     skip = 0
     while True:
@@ -171,7 +171,21 @@ def run_racecards() -> dict:
         if len(cards) < PAGE:
             break
         skip += len(cards)
-    return {"kind": "racecards", "races": races, "runners": runners, "odds_rows": odds_rows}
+    return races, runners, odds_rows
+
+
+def run_racecards() -> dict:
+    if DATE:
+        dates = [DATE]
+    else:
+        base = dt.datetime.now(dt.timezone.utc).date()
+        dates = [(base + dt.timedelta(days=i)).isoformat() for i in range(DAYS_AHEAD + 1)]
+    tot_r = tot_run = tot_odds = 0
+    for day in dates:
+        r, run, od = _collect_day(day)
+        tot_r += r; tot_run += run; tot_odds += od
+    return {"kind": "racecards", "dates": dates,
+            "races": tot_r, "runners": tot_run, "odds_rows": tot_odds}
 
 # --------------------------------------------------------------------------- #
 def run_results() -> dict:
