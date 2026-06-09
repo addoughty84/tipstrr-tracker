@@ -1,0 +1,25 @@
+name: tipstrr-monitor
+
+# Daily health check. Fails (-> GitHub emails you) if the pipeline has gone
+# stale: no successful run in ~30h, last run failed, or it wrote no data.
+on:
+  schedule:
+    - cron: "0 7 * * *"      # 07:00 UTC daily, after the 23:30 scrape
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Check pipeline freshness
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          STALE_HOURS:          "30"
+        run: python monitor.py
