@@ -43,7 +43,7 @@ PERIODS       = [int(p) for p in os.environ.get("PERIODS", "1,3,6,12").split(","
 DISC_PERIODS  = [int(p) for p in os.environ.get("DISCOVERY_PERIODS", "1,3,6,12").split(",")]
 PORTFOLIO_TYPES = [int(t) for t in os.environ.get("PORTFOLIO_TYPES", "0,1,2").split(",")]
 DISC_MAX_PAGES = int(os.environ.get("DISCOVERY_MAX_PAGES", "80"))
-REQ_DELAY     = float(os.environ.get("REQUEST_DELAY", "0.4"))
+REQ_DELAY     = float(os.environ.get("REQUEST_DELAY", "0.9"))
 PAGE_SIZE     = int(os.environ.get("PAGE_SIZE", "10"))
 MAX_PAGES     = int(os.environ.get("MAX_PAGES", "800"))     # completed-feed cap
 FULL_BACKFILL = os.environ.get("FULL_BACKFILL", "0") == "1"
@@ -61,8 +61,8 @@ RESULT_MAP = {1: "won", 2: "half-won", 3: "lost", 4: "half-lost", 5: "void"}
 # --------------------------------------------------------------------------- #
 def make_session() -> requests.Session:
     s = requests.Session()
-    retry = Retry(total=5, connect=5, read=5, backoff_factor=1.5,
-                  status_forcelist=(429, 500, 502, 503, 504),
+    retry = Retry(total=6, connect=5, read=5, backoff_factor=2.0,
+                  status_forcelist=(403, 429, 500, 502, 503, 504),
                   allowed_methods=("GET",), raise_on_status=False)
     s.mount("https://", HTTPAdapter(max_retries=retry))
     s.headers.update({
