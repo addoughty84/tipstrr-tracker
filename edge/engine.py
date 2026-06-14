@@ -30,6 +30,14 @@ def _build_sql(rule):
         where.append("l.advised_odds <= %(omax)s"); params["omax"] = sel["odds_max"]
     if sel.get("trainer"):
         where.append("l.trainer = %(trainer)s"); params["trainer"] = sel["trainer"]
+    if sel.get("jockey"):
+        where.append("l.jockey = %(jockey)s"); params["jockey"] = sel["jockey"]
+    if sel.get("course"):
+        where.append("r.course = %(course)s"); params["course"] = sel["course"]
+    if sel.get("race_class"):
+        where.append("r.class = %(rclass)s"); params["rclass"] = sel["race_class"]
+    if sel.get("dow") is not None:
+        where.append("EXTRACT(DOW FROM r.off_dt) = %(dow)s"); params["dow"] = sel["dow"]
     distf = "NULLIF(regexp_replace(r.dist_f,'[^0-9.]','','g'),'')::numeric"
     db = sel.get("dist_band")
     if db == "sprint":   where.append(f"{distf} < 7")

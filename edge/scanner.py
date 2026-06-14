@@ -21,7 +21,9 @@ MIN_HOLDOUT_TSTAT = 0.8
 HOLDOUT_DAYS = 45
 MIN_TIPSTER_SINGLES = 120
 MIN_TRAINER_TIPS = 60
-MAX_CANDIDATES = 400
+MAX_CANDIDATES = 600
+MIN_JOCKEY_TIPS = 80
+MIN_COURSE_TIPS = 80
 LEVEL = {"type": "level", "points": 1}
 
 
@@ -44,6 +46,31 @@ def qualifying_trainers(conn):
           AND l.trainer IS NOT NULL AND l.trainer<>''
         GROUP BY l.trainer HAVING count(*) >= %s ORDER BY n DESC""",
         (MIN_TRAINER_TIPS,))
+    rows = cur.fetchall(); cur.close()
+    return [r[0] for r in rows]
+
+
+def qualifying_jockeys(conn):
+    cur = conn.cursor()
+    cur.execute("""SELECT l.jockey, count(*) n
+        FROM tips t JOIN tip_legs l ON l.tip_reference=t.reference
+        WHERE COALESCE(t.n_selections,1)<=1 AND t.profit_points IS NOT NULL
+          AND l.jockey IS NOT NULL AND l.jockey NOT IN ('','Unknown')
+        GROUP BY l.jockey HAVING count(*) >= %s ORDER BY n DESC""",
+        (MIN_JOCKEY_TIPS,))
+    rows = cur.fetchall(); cur.close()
+    return [r[0] for r in rows]
+
+
+def qualifying_courses(conn):
+    cur = conn.cursor()
+    cur.execute("""SELECT r.course, count(*) n
+        FROM tips t JOIN tip_legs l ON l.tip_reference=t.reference
+          JOIN ra_results r ON r.race_id=l.race_id
+        WHERE COALESCE(t.n_selections,1)<=1 AND t.profit_points IS NOT NULL
+          AND r.course IS NOT NULL AND r.course<>''
+        GROUP BY r.course HAVING count(*) >= %s ORDER BY n DESC""",
+        (MIN_COURSE_TIPS,))
     rows = cur.fetchall(); cur.close()
     return [r[0] for r in rows]
 
@@ -100,6 +127,18 @@ def gen_candidates(conn):
     for tr in qualifying_trainers(conn):
         yield "Trainer: " + tr, "Back any tip on a " + tr + " runner.", _rule(trainer=tr)
         yield "Trainer: " + tr + ", no AW", "Back any tip on a " + tr + " runner except AW.", _rule(trainer=tr, exclude_surface=["AW"])
+
+    for jk in qualifying_jockeys(conn):
+        yield "Jockey: " + jk, "Back any tip ridden by " + jk + ".", _rule(jockey=jk)
+
+    for crs in qualifying_courses(conn):
+        yield "Course: " + crs, "Back any tip at " + crs + ".", _rule(course=crs)
+
+    for cl in ["Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6"]:
+        yield "All tips: " + cl, "Back every tip in " + cl + " races.", _rule(race_class=cl)
+
+    for d, nm in [(1,"Monday"),(2,"Tuesday"),(3,"Wednesday"),(4,"Thursday"),(5,"Friday"),(6,"Saturday"),(0,"Sunday")]:
+        yield "All tips: " + nm, "Back every tip on a " + nm + ".", _rule(dow=d)
 
 
 def edge_id(rule):
