@@ -1,6 +1,6 @@
 name: racing-collect
 
-# Poll GB/IRE racecards + odds every 30 minutes, around the clock, pulling
+# Poll GB/IRE racecards + odds every 15 minutes, around the clock, pulling
 # TODAY and TOMORROW's cards. Tips arrive ~5pm the day before, so tomorrow's
 # card is under watch from the evening before right through to each race's
 # off-time. Finished races drop out of the feed automatically, so we stop
@@ -8,7 +8,7 @@ name: racing-collect
 # Idempotent: repeated polls only add genuine price changes, never duplicates.
 on:
   schedule:
-    - cron: "*/30 * * * *"        # every 30 minutes
+    - cron: "*/15 * * * *"        # every 15 minutes (finer odds-movement resolution)
   workflow_dispatch:
     inputs:
       date:
