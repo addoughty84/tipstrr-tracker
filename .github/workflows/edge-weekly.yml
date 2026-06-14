@@ -1,0 +1,20 @@
+name: edge-scanner-weekly
+# The edge finder: scans for new candidate edges, backtests + holdout-confirms, registers survivors.
+on:
+  schedule:
+    - cron: "0 6 * * 1"      # 06:00 UTC every Monday
+  workflow_dispatch:
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r edge/requirements.txt
+      - name: Scan for edges
+        working-directory: edge
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python scanner.py

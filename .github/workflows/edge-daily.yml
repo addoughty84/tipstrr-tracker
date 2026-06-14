@@ -1,0 +1,20 @@
+name: edge-settler-daily
+# Forward paper-trading heartbeat: settles each edge's new bets and updates its record.
+on:
+  schedule:
+    - cron: "0 8 * * *"      # 08:00 UTC daily (after overnight results settle)
+  workflow_dispatch:
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r edge/requirements.txt
+      - name: Settle edges
+        working-directory: edge
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python settler.py
