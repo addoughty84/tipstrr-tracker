@@ -65,8 +65,16 @@ def make_session() -> requests.Session:
                   status_forcelist=(429, 500, 502, 503, 504),
                   allowed_methods=("GET",), raise_on_status=False)
     s.mount("https://", HTTPAdapter(max_retries=retry))
-    s.headers.update({"User-Agent": "boothco-tipstrr-tracker/2.0 (+personal research)",
-                      "Accept": "application/json"})
+    s.headers.update({
+        # Browser UA + headers: tipstrr fronted the API with Cloudflare, which
+        # blocks non-browser user-agents (the old bot UA started returning 403).
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-GB,en;q=0.9",
+        "Referer": BASE + "/",
+    })
     return s
 
 HTTP = make_session()
