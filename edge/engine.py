@@ -8,7 +8,9 @@ def connect():
     url = os.environ.get("SUPABASE_DB_URL")
     if not url:
         raise SystemExit("Missing env SUPABASE_DB_URL")
-    return psycopg2.connect(url, connect_timeout=20)
+    conn = psycopg2.connect(url, connect_timeout=20)
+    conn.autocommit = True
+    return conn
 
 
 def _build_sql(rule):
@@ -36,8 +38,12 @@ def _build_sql(rule):
         where.append("r.course = %(course)s"); params["course"] = sel["course"]
     if sel.get("race_class"):
         where.append("r.class = %(rclass)s"); params["rclass"] = sel["race_class"]
-    if sel.get("dow") is not None:
-        where.append("EXTRACT(DOW FROM r.off_dt) = %(dow)s"); params["dow"] = sel["dow"]
+    dow = sel.get("dow")
+    if dow is not None:
+        if isinstance(dow, (list, tuple)):
+            where.append("EXTRACT(DOW FROM r.off_dt)::int = ANY(%(dow)s)"); params["dow"] = [int(x) for x in dow]
+        else:
+            where.append("EXTRACT(DOW FROM r.off_dt)::int = %(dow)s"); params["dow"] = int(dow)
     distf = "NULLIF(regexp_replace(r.dist_f,'[^0-9.]','','g'),'')::numeric"
     db = sel.get("dist_band")
     if db == "sprint":   where.append(f"{distf} < 7")
