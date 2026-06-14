@@ -27,7 +27,8 @@ MAX_TOKENS = int(os.environ.get("RESEARCHER_MAX_TOKENS", "2500"))
 # selection fields the engine understands (anything else -> data gap)
 ALLOWED = {"pool", "consensus_min", "exclude_surface", "race_code_in",
            "dist_band", "going_group", "odds_min", "odds_max",
-           "trainer", "jockey", "course", "race_class", "dow"}
+           "trainer", "jockey", "course", "race_class", "dow",
+           "first_time_headgear", "wind_surgery_first", "days_since", "trainer_hot"}
 
 SYSTEM = """You are a quantitative horse-racing analyst hunting for betting edges in a
 database of tipster picks for UK & Ireland racing. Each pick is a horse in a race,
@@ -49,6 +50,10 @@ Available selection fields (use only these):
 - trainer / jockey / course: exact name string
 - race_class: "Class 1".."Class 6"
 - dow: 0=Sun .. 6=Sat
+- first_time_headgear: true  (horse wears headgear for the first time)
+- wind_surgery_first: true   (first run after a wind operation)
+- days_since: "recent" (<=21d) | "mid" (22-90d) | "layoff" (>90d)
+- trainer_hot: true          (trainer's 14-day strike rate >= 20%)
 
 Favour plausible, mechanism-backed angles and COMBINATIONS (e.g. odds band x going,
 consensus x distance, short-priced favourites on soft ground). Avoid single obvious

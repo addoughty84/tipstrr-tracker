@@ -44,6 +44,18 @@ def _build_sql(rule):
             where.append("EXTRACT(DOW FROM r.off_dt)::int = ANY(%(dow)s)"); params["dow"] = [int(x) for x in dow]
         else:
             where.append("EXTRACT(DOW FROM r.off_dt)::int = %(dow)s"); params["dow"] = int(dow)
+    if sel.get("first_time_headgear"):
+        where.append("(rr.headgear IS NOT NULL AND rr.headgear <> '' AND COALESCE(rr.headgear_run,'') IN ('','1'))")
+    if sel.get("wind_surgery_first"):
+        where.append("(rr.wind_surgery IS NOT NULL AND rr.wind_surgery <> '' AND COALESCE(rr.wind_surgery_run,'') IN ('','1'))")
+    ds = sel.get("days_since")
+    if ds:
+        dsx = "NULLIF(regexp_replace(COALESCE(rr.last_run,''),'[^0-9]','','g'),'')::int"
+        if ds == "recent":   where.append(f"{dsx} <= 21")
+        elif ds == "mid":    where.append(f"{dsx} > 21 AND {dsx} <= 90")
+        elif ds == "layoff": where.append(f"{dsx} > 90")
+    if sel.get("trainer_hot"):
+        where.append("NULLIF(regexp_replace(COALESCE(rr.trainer_14d_percent,''),'[^0-9]','','g'),'')::int >= 20")
     distf = "NULLIF(regexp_replace(r.dist_f,'[^0-9.]','','g'),'')::numeric"
     db = sel.get("dist_band")
     if db == "sprint":   where.append(f"{distf} < 7")
@@ -65,6 +77,7 @@ def _build_sql(rule):
       FROM tips t
         JOIN tip_legs l   ON l.tip_reference = t.reference
         JOIN ra_results r ON r.race_id = l.race_id
+        LEFT JOIN ra_runners rr ON rr.race_id = l.race_id AND rr.horse_id = l.horse_id
       WHERE {' AND '.join(where)}
       GROUP BY l.race_id, l.horse_id
     )
