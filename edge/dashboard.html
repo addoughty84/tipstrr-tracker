@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Edge Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#0e1117;color:#e6edf3;margin:0;padding:24px;}
+ h1{font-size:22px;margin:0 0 4px} .sub{color:#8b949e;margin:0 0 20px;font-size:13px}
+ .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+ .card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 18px;min-width:130px}
+ .card .v{font-size:26px;font-weight:700} .card .l{color:#8b949e;font-size:12px}
+ h2{font-size:15px;margin:24px 0 8px;color:#c9d1d9}
+ table{width:100%;border-collapse:collapse;background:#161b22;border:1px solid #30363d;border-radius:10px;overflow:hidden}
+ th,td{text-align:left;padding:9px 12px;border-bottom:1px solid #21262d;font-size:13px}
+ th{color:#8b949e;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+ td.num{text-align:right;font-variant-numeric:tabular-nums} td.dim{color:#8b949e}
+ .pill{background:#21262d;border-radius:20px;padding:2px 9px;font-size:11px;color:#8b949e}
+ canvas{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:10px;margin-top:6px}
+ .note{color:#8b949e;font-size:12px;margin-top:6px}
+</style></head><body>
+<h1>🐎 Edge Dashboard</h1>
+<p class=sub>tipstrr-tracker · generated 2026-06-14 17:54 UTC</p>
+<div class=cards>
+ <div class=card><div class=v>10</div><div class=l>edges</div></div>
+ <div class=card><div class=v>10</div><div class=l>paper-testing</div></div>
+ <div class=card><div class=v>0</div><div class=l>forward bets</div></div>
+ <div class=card><div class=v>6</div><div class=l>data gaps</div></div>
+</div>
+
+<h2>Forward equity (paper money, cumulative points)</h2>
+<canvas id=eq height=90></canvas>
+<p class=note>Forward records start the day each edge is frozen. Backtest numbers are NOT shown here — only money "bet" after freezing counts. This is the honest curve.</p>
+
+<h2>Edges — ranked by out-of-sample (holdout) ROI</h2>
+<table><tr><th>Edge</th><th>Status</th><th>Holdout ROI</th><th>Holdout bets</th><th>Fwd bets</th><th>Fwd ROI</th><th>Frozen</th></tr>
+<tr><td>Solo: CA BETS, jumps</td><td><span class=pill>paper</span></td><td class=num>+190.2%</td><td class=num>46</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: >=2 of 8, jumps</td><td><span class=pill>paper</span></td><td class=num>+165.5%</td><td class=num>77</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: >=2 of 8, no AW, jumps</td><td><span class=pill>paper</span></td><td class=num>+165.5%</td><td class=num>77</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: >=2 of 8, staying</td><td><span class=pill>paper</span></td><td class=num>+132.4%</td><td class=num>93</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: ACTIVE Betting Hub, jumps</td><td><span class=pill>paper</span></td><td class=num>+106.0%</td><td class=num>83</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: CA BETS (no AW)</td><td><span class=pill>paper</span></td><td class=num>+88.2%</td><td class=num>169</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: ACTIVE Betting Hub, no AW</td><td><span class=pill>paper</span></td><td class=num>+66.8%</td><td class=num>289</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: ≥2 of the 8 agree, no All-Weather</td><td><span class=pill>paper</span></td><td class=num>+65.0%</td><td class=num>427</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: ACTIVE Betting Hub</td><td><span class=pill>paper</span></td><td class=num>+62.3%</td><td class=num>310</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: ≥2 of the 8 agree</td><td><span class=pill>paper</span></td><td class=num>+56.3%</td><td class=num>492</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+</table>
+<p class=note>Holdout ROI = backtest on data the finder never saw. Fwd ROI = real forward paper record (the one that counts). Trust Fwd once the bet count is high.</p>
+
+<h2>Data-gap queue — theories awaiting / using new data</h2>
+<table><tr><th>Theory</th><th>Needs</th><th>Status</th></tr>
+<tr><td>Tipster divergence at short odds — When tipsters agree on a 2–4 shot, they're often wrong (consensus false confidence); highest ROI is 1–2 tipster picks at same odds.</td><td class=dim>Consensus count vs. result at each odds band; divergence penalty/bonus for short-priced picks by consensus size.</td><td><span class=pill>open</span></td></tr>
+<tr><td>Course specialist bias — Tipsters may systematically misprice course specialists; horses with >40% course wins should outperform advised odds.</td><td class=dim>Number of course runs and wins for each horse; course win rate vs. field win rate baseline.</td><td><span class=pill>open</span></td></tr>
+<tr><td>Jockey + odds band interaction — Top jockeys riding at odds 6–15 on turf may have invisible ride quality advantage tipsters don't price in.</td><td class=dim>Win rate and ROI by jockey; jockey's historical ROI per odds band and surface.</td><td><span class=pill>open</span></td></tr>
+<tr><td>Trainer form synergy — Certain trainers consistently outperform tipster picks in specific conditions or distances; need win rate by trainer + condition.</td><td class=dim>Historical win rate for each trainer filtered by going, distance, and race class; tipster edge attribution per trainer.</td><td><span class=pill>open</span></td></tr>
+<tr><td>Market drift shorteners — Horses whose price shortens sharply pre-off attract informed money.</td><td class=dim>price movement / odds over time before the off</td><td><span class=pill>open</span></td></tr>
+<tr><td>First-time cheekpieces — Headgear applied for the first time often sharpens a horse up.</td><td class=dim>headgear / first-time-headgear flag per runner</td><td><span class=pill>open</span></td></tr>
+</table>
+
+<script>
+const pts=[];
+new Chart(document.getElementById('eq'),{type:'line',
+ data:{labels:pts.map(p=>p.x),datasets:[{data:pts.map(p=>p.y),borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,.1)',fill:true,tension:.2,pointRadius:0}]},
+ options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}});
+</script>
+</body></html>
