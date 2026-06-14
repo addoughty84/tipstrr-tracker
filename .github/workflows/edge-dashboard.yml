@@ -1,0 +1,31 @@
+name: edge-dashboard
+# Regenerates dashboard.html from the database and commits it, so a fixed URL
+# always shows the latest. Runs after the daily settler + a midday refresh.
+on:
+  schedule:
+    - cron: "30 8 * * *"     # after the 08:00 settler
+    - cron: "0 18 * * *"     # evening refresh
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r edge/requirements.txt
+      - name: Build dashboard
+        working-directory: edge
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python dashboard.py
+      - name: Commit dashboard
+        run: |
+          git config user.name "edge-bot"
+          git config user.email "edge-bot@users.noreply.github.com"
+          git add edge/dashboard.html
+          git commit -m "Update dashboard $(date -u +%Y-%m-%dT%H:%MZ)" || { echo "no changes"; exit 0; }
+          git push
