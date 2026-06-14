@@ -38,3 +38,13 @@ CREATE TABLE IF NOT EXISTS edge_bets (
 
 CREATE INDEX IF NOT EXISTS edge_bets_edge_idx     ON edge_bets(edge_id);
 CREATE INDEX IF NOT EXISTS edge_bets_posted_idx   ON edge_bets(posted_at);
+
+-- Phase 2: theories the LLM researcher proposes that need data we don't yet have
+CREATE TABLE IF NOT EXISTS data_gaps (
+  id          text PRIMARY KEY,
+  theory      text NOT NULL,
+  needs_data  text,
+  source      text DEFAULT 'llm',
+  status      text DEFAULT 'open',   -- open | acquired | rejected
+  created_at  timestamptz DEFAULT now()
+);
