@@ -30,6 +30,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from supabase import create_client, Client
+from racing_filter import is_uk_irish_horse_racing, parse_fixture
 
 # --------------------------------------------------------------------------- #
 SUPABASE_URL = os.environ["SUPABASE_URL"]
@@ -52,6 +53,8 @@ MAX_RUNTIME_MIN = float(os.environ.get("MAX_RUNTIME_MIN", "0"))  # 0 = unlimited
 ONLY_SLUGS    = [s for s in os.environ.get("ONLY_SLUGS", "").split(",") if s]
 SHARD_INDEX   = int(os.environ.get("SHARD_INDEX", "0"))   # this job's slice
 SHARD_COUNT   = int(os.environ.get("SHARD_COUNT", "1"))   # total slices (parallel jobs)
+UK_IRE_ONLY   = os.environ.get("UK_IRE_ONLY", "1") == "1"        # store GB/IRE horse racing only
+OVERLAP_DAYS  = int(os.environ.get("DAILY_OVERLAP_DAYS", "3"))   # daily re-check window (days)
 
 RESULT_MAP = {1: "won", 2: "half-won", 3: "lost", 4: "half-lost", 5: "void"}
 
@@ -183,7 +186,7 @@ def _parse_dt(s):
     except Exception:
         return None
 
-def list_references(slug: str, stop_known: set[str]) -> list[dict]:
+def list_references(slug: str, stop_known: set[str], since: dt.datetime | None = None) -> list[dict]:
     """Newest-first list of completed tips.
 
     * BACKFILL_DAYS > 0  -> walk down until tips are older than the window
@@ -203,6 +206,13 @@ def list_references(slug: str, stop_known: set[str]) -> list[dict]:
             in_window = [x for x in page if (_parse_dt(x.get("date")) or cutoff) >= cutoff]
             refs.extend(in_window)
             if len(in_window) < len(page):        # crossed the cutoff -> done
+                break
+        elif since is not None:
+            # Daily: stop once tips fall older than the recent overlap window.
+            # Robust to skipped (non-GB/IRE) refs that are never stored.
+            in_window = [x for x in page if (_parse_dt(x.get("date")) or since) >= since]
+            refs.extend(in_window)
+            if len(in_window) < len(page):
                 break
         else:
             refs.extend(page)
@@ -243,8 +253,9 @@ def parse_tip(slug: str, ref: str) -> dict | None:
         winner = next((p.get("name") for p in parts if str(p.get("position")) == "1"), None)
         pos = next((p.get("position") for p in parts if p.get("name") == horse.get("name")), None)
         fxref = it.get("fixtureReference") or ""
-        course = fxref.split("-")[3] if len(fxref.split("-")) > 3 else None
-        rtime = fxref.split("-")[3-1] if False else (fxref.split("-")[2] if len(fxref.split("-"))>2 else None)
+        fxinfo = parse_fixture(fxref)            # correct date/time/course (fixes column-shift bug)
+        course = fxinfo["course_slug"]
+        rtime = fxinfo["time"]
         legs.append({
             "leg_index": idx, "fixture_reference": fxref or None,
             "course": course, "race_time": rtime,
@@ -257,7 +268,10 @@ def parse_tip(slug: str, ref: str) -> dict | None:
             "finish_position": pos, "non_runner": horse.get("nonRunner"),
             "winner_horse": winner, "raw": it,
         })
-    return {"bets": bets, "headline": b0, "legs": legs}
+    accept = bool(legs) and all(
+        is_uk_irish_horse_racing(fixture_reference=lg["fixture_reference"])[0] for lg in legs
+    )
+    return {"bets": bets, "headline": b0, "legs": legs, "accept": accept}
 
 def store_tip(slug: str, meta: dict, parsed: dict | None) -> int:
     ref = meta["reference"]
@@ -285,7 +299,7 @@ def store_tip(slug: str, meta: dict, parsed: dict | None) -> int:
 def main() -> int:
     started = dt.datetime.now(dt.timezone.utc)
     run_id = DB.table("scrape_runs").insert({"status": "running"}).execute().data[0]["id"]
-    errors = tips_up = legs_up = stats_up = 0
+    errors = tips_up = legs_up = stats_up = skipped = 0
     notes: list[str] = []
 
     known = known_slugs()
@@ -312,6 +326,7 @@ def main() -> int:
 
             # all references we already have for this slug (so restarts are cheap)
             existing = set()
+            since = None
             if not FULL_BACKFILL:
                 pg = 0
                 while True:
@@ -321,8 +336,15 @@ def main() -> int:
                     if len(rows) < 1000:
                         break
                     pg += 1
+                # newest stored tip -> only walk back a small overlap window each day
+                latest = (DB.table("tips").select("posted_at").eq("slug", slug)
+                            .order("posted_at", desc=True).limit(1).execute().data)
+                if latest and latest[0].get("posted_at"):
+                    _lp = _parse_dt(latest[0]["posted_at"])
+                    if _lp:
+                        since = _lp - dt.timedelta(days=OVERLAP_DAYS)
 
-            for meta in list_references(slug, existing):
+            for meta in list_references(slug, existing, since):
                 ref = meta["reference"]
                 if ref in existing and not FULL_BACKFILL:
                     continue                      # already have the rich detail
@@ -331,6 +353,9 @@ def main() -> int:
                 except Exception as e:
                     parsed = None
                     notes.append(f"{ref}: parse {e}")
+                if UK_IRE_ONLY and not (parsed and parsed.get("accept")):
+                    skipped += 1              # football / overseas / unparseable -> not stored
+                    continue
                 legs_up += store_tip(slug, meta, parsed)
                 tips_up += 1
             if n % 10 == 0:
@@ -344,11 +369,12 @@ def main() -> int:
         "finished_at": dt.datetime.now(dt.timezone.utc).isoformat(), "status": status,
         "tipsters_seen": len(targets), "new_tipsters": len(new_slugs),
         "tips_upserted": tips_up, "legs_upserted": legs_up, "stats_upserted": stats_up,
-        "errors": errors, "notes": {"new_slugs": sorted(new_slugs)[:200], "errors": notes[:50]},
+        "errors": errors, "notes": {"new_slugs": sorted(new_slugs)[:200],
+                                    "errors": notes[:50], "skipped_non_uk_ire": skipped},
     }).eq("id", run_id).execute()
     dur = (dt.datetime.now(dt.timezone.utc) - started).total_seconds()
     print(f"Done {dur:.0f}s status={status} tips+={tips_up} legs+={legs_up} "
-          f"stats+={stats_up} new={len(new_slugs)} errors={errors}")
+          f"stats+={stats_up} skipped={skipped} new={len(new_slugs)} errors={errors}")
     return 1 if status == "failed" else 0
 
 
