@@ -41,4 +41,4 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           FULL_BACKFILL:        ${{ github.event.inputs.full_backfill }}
           ONLY_SLUGS:           ${{ github.event.inputs.only_slugs }}
-        run: python scraper.py
+        run: SKIP_STATS=1 MAX_RUNTIME_MIN=80 python scraper.py
