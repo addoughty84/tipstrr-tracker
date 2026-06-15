@@ -1,0 +1,35 @@
+name: tip-match
+
+# Link every tipster tip to its Racing-API race_id + horse_id, using racecards
+# already in Supabase (no Racing API calls -> can't be rate-limited). Runs often
+# so new tips are matched within minutes; 'pending' legs (card not loaded yet)
+# are retried automatically each run until their racecard appears. Idempotent.
+on:
+  schedule:
+    - cron: "*/30 * * * *"     # every 30 minutes, around the clock
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Lookback days to (re)scan"
+        required: false
+        default: "3"
+
+concurrency:
+  group: tip-match
+  cancel-in-progress: false
+
+jobs:
+  match:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install psycopg2-binary
+      - name: Match tip legs to races
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python match_legs.py --days "${{ github.event.inputs.days || '3' }}"
