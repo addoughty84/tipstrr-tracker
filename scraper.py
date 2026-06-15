@@ -55,6 +55,7 @@ SHARD_INDEX   = int(os.environ.get("SHARD_INDEX", "0"))   # this job's slice
 SHARD_COUNT   = int(os.environ.get("SHARD_COUNT", "1"))   # total slices (parallel jobs)
 UK_IRE_ONLY   = os.environ.get("UK_IRE_ONLY", "1") == "1"        # store GB/IRE horse racing only
 OVERLAP_DAYS  = int(os.environ.get("DAILY_OVERLAP_DAYS", "3"))   # daily re-check window (days)
+REFETCH_WINDOW_DAYS = int(os.environ.get("REFETCH_WINDOW_DAYS", "21"))  # reach back this far to re-pull incomplete tips
 
 RESULT_MAP = {1: "won", 2: "half-won", 3: "lost", 4: "half-lost", 5: "void"}
 
@@ -185,9 +186,9 @@ def capture_stats(slug: str) -> int:
     return len(rows)
 
 
-# --------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 # Per-tipster: reference list (cheap) + rich per-tip parse
-# --------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 def _parse_dt(s):
     try:
         return dt.datetime.fromisoformat(str(s).replace("Z", "+00:00"))
@@ -307,7 +308,7 @@ def store_tip(slug: str, meta: dict, parsed: dict | None) -> int:
 def main() -> int:
     started = dt.datetime.now(dt.timezone.utc)
     run_id = DB.table("scrape_runs").insert({"status": "running"}).execute().data[0]["id"]
-    errors = tips_up = legs_up = stats_up = skipped = 0
+    errors = tips_up = legs_up = stats_up = skipped = incomplete_skips = 0
     notes: list[str] = []
 
     known = known_slugs()
@@ -344,6 +345,19 @@ def main() -> int:
                     if len(rows) < 1000:
                         break
                     pg += 1
+                # SELF-HEAL: tips stored from a half-loaded page (no selection captured)
+                # must NOT count as "already have it" -> drop them so they get re-fetched.
+                incomplete = set()
+                pg = 0
+                while True:
+                    rows = (DB.table("tip_legs").select("tip_reference")
+                              .eq("slug", slug).is_("horse", "null")
+                              .range(pg*1000, pg*1000+999).execute().data)
+                    incomplete.update(r["tip_reference"] for r in rows)
+                    if len(rows) < 1000:
+                        break
+                    pg += 1
+                existing -= incomplete
                 # newest stored tip -> only walk back a small overlap window each day
                 latest = (DB.table("tips").select("posted_at").eq("slug", slug)
                             .order("posted_at", desc=True).limit(1).execute().data)
@@ -351,6 +365,10 @@ def main() -> int:
                     _lp = _parse_dt(latest[0]["posted_at"])
                     if _lp:
                         since = _lp - dt.timedelta(days=OVERLAP_DAYS)
+                # if any incomplete tips remain, reach back far enough to re-list them
+                if incomplete:
+                    _back = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=REFETCH_WINDOW_DAYS)
+                    since = min(since, _back) if since else _back
 
             for meta in list_references(slug, existing, since):
                 ref = meta["reference"]
@@ -363,6 +381,11 @@ def main() -> int:
                     notes.append(f"{ref}: parse {e}")
                 if UK_IRE_ONLY and not (parsed and parsed.get("accept")):
                     skipped += 1              # football / overseas / unparseable -> not stored
+                    continue
+                # SELF-HEAL: a page with no selection is a partial fetch -> skip & retry,
+                # never store a blank-horse leg that would look like permanent data.
+                if not (parsed and any(lg.get("horse") for lg in (parsed.get("legs") or []))):
+                    incomplete_skips += 1
                     continue
                 legs_up += store_tip(slug, meta, parsed)
                 tips_up += 1
@@ -382,7 +405,7 @@ def main() -> int:
     }).eq("id", run_id).execute()
     dur = (dt.datetime.now(dt.timezone.utc) - started).total_seconds()
     print(f"Done {dur:.0f}s status={status} tips+={tips_up} legs+={legs_up} "
-          f"stats+={stats_up} skipped={skipped} new={len(new_slugs)} errors={errors}")
+          f"stats+={stats_up} skipped={skipped} incomplete={incomplete_skips} new={len(new_slugs)} errors={errors}")
     return 1 if status == "failed" else 0
 
 
