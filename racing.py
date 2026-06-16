@@ -35,6 +35,7 @@ MODE     = os.environ.get("RACING_MODE", "racecards")          # racecards | res
 REGIONS  = [r for r in os.environ.get("REGION_CODES", "gb,ire").split(",") if r]
 DATE     = os.environ.get("DATE", "")                          # YYYY-MM-DD; blank=today(UTC)
 DAYS_AHEAD = int(os.environ.get("DAYS_AHEAD", "1"))            # also pull this many days ahead (tomorrow=1)
+RESULTS_DAYS_BACK = int(os.environ.get("RESULTS_DAYS_BACK", "1"))  # results: also pull this many days back (yesterday=1)
 REQ_DELAY = float(os.environ.get("REQUEST_DELAY", "0.3"))      # politeness (<=5/s)
 PAGE     = int(os.environ.get("PAGE_SIZE", "50"))
 
@@ -188,8 +189,7 @@ def run_racecards() -> dict:
             "races": tot_r, "runners": tot_run, "odds_rows": tot_odds}
 
 # --------------------------------------------------------------------------- #
-def run_results() -> dict:
-    day = today()
+def _collect_results_day(day: str) -> tuple:
     results = runners = 0
     skip = 0
     while True:
@@ -243,7 +243,26 @@ def run_results() -> dict:
         if len(res) < PAGE:
             break
         skip += len(res)
-    return {"kind": "results", "results": results, "runners": runners}
+    return results, runners
+
+
+def run_results() -> dict:
+    """Collect results for yesterday + today.
+
+    Robust to this job firing just after midnight UTC (GitHub crons drift):
+    even a 00:20 run still grabs the day that just finished. Idempotent upserts
+    mean re-confirming a day is free.
+    """
+    if DATE:
+        dates = [DATE]
+    else:
+        base = dt.datetime.now(dt.timezone.utc).date()
+        dates = [(base - dt.timedelta(days=i)).isoformat() for i in range(RESULTS_DAYS_BACK, -1, -1)]
+    results = runners = 0
+    for day in dates:
+        r, run = _collect_results_day(day)
+        results += r; runners += run
+    return {"kind": "results", "dates": dates, "results": results, "runners": runners}
 
 # --------------------------------------------------------------------------- #
 def main() -> int:
