@@ -3,7 +3,8 @@ name: racing-results
 # Pull GB/IRE results once racing has settled.
 on:
   schedule:
-    - cron: "0 23 * * *"          # 23:00 UTC daily
+    - cron: "0 23 * * *"          # 23:00 UTC daily (same-day, after racing settles)
+    - cron: "0 6 * * *"           # 06:00 UTC backstop -> results in before the 08:00 settler
   workflow_dispatch:
     inputs:
       date:
