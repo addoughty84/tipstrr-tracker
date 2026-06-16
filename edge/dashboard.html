@@ -18,12 +18,12 @@
  .note{color:#8b949e;font-size:12px;margin-top:6px}
 </style></head><body>
 <h1>🐎 Edge Dashboard</h1>
-<p class=sub>tipstrr-tracker · generated 2026-06-15 20:52 UTC</p>
+<p class=sub>tipstrr-tracker · generated 2026-06-16 13:14 UTC</p>
 <div class=cards>
  <div class=card><div class=v>10</div><div class=l>edges</div></div>
  <div class=card><div class=v>10</div><div class=l>paper-testing</div></div>
- <div class=card><div class=v>0</div><div class=l>forward bets</div></div>
- <div class=card><div class=v>7</div><div class=l>data gaps</div></div>
+ <div class=card><div class=v>43</div><div class=l>forward bets</div></div>
+ <div class=card><div class=v>10</div><div class=l>data gaps</div></div>
 </div>
 
 <h2>Forward equity (paper money, cumulative points)</h2>
@@ -33,20 +33,23 @@
 <h2>Edges — ranked by out-of-sample (holdout) ROI</h2>
 <table><tr><th>Edge</th><th>Status</th><th>Holdout ROI</th><th>Holdout bets</th><th>Fwd bets</th><th>Fwd ROI</th><th>Frozen</th></tr>
 <tr><td>Solo: CA BETS, jumps</td><td><span class=pill>paper</span></td><td class=num>+190.2%</td><td class=num>46</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
-<tr><td>Consensus: >=2 of 8, jumps</td><td><span class=pill>paper</span></td><td class=num>+165.5%</td><td class=num>77</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
 <tr><td>Consensus: >=2 of 8, no AW, jumps</td><td><span class=pill>paper</span></td><td class=num>+165.5%</td><td class=num>77</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: >=2 of 8, jumps</td><td><span class=pill>paper</span></td><td class=num>+165.5%</td><td class=num>77</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
 <tr><td>Consensus: >=2 of 8, staying</td><td><span class=pill>paper</span></td><td class=num>+132.4%</td><td class=num>93</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
 <tr><td>Solo: ACTIVE Betting Hub, jumps</td><td><span class=pill>paper</span></td><td class=num>+106.0%</td><td class=num>83</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
-<tr><td>Solo: CA BETS (no AW)</td><td><span class=pill>paper</span></td><td class=num>+88.2%</td><td class=num>169</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
-<tr><td>Solo: ACTIVE Betting Hub, no AW</td><td><span class=pill>paper</span></td><td class=num>+66.8%</td><td class=num>289</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
-<tr><td>Consensus: ≥2 of the 8 agree, no All-Weather</td><td><span class=pill>paper</span></td><td class=num>+65.0%</td><td class=num>427</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
-<tr><td>Solo: ACTIVE Betting Hub</td><td><span class=pill>paper</span></td><td class=num>+62.3%</td><td class=num>310</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
-<tr><td>Consensus: ≥2 of the 8 agree</td><td><span class=pill>paper</span></td><td class=num>+56.3%</td><td class=num>492</td><td class=num>0</td><td class=num>—</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: CA BETS (no AW)</td><td><span class=pill>paper</span></td><td class=num>+88.2%</td><td class=num>169</td><td class=num>5</td><td class=num>-80%</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: ACTIVE Betting Hub, no AW</td><td><span class=pill>paper</span></td><td class=num>+66.8%</td><td class=num>289</td><td class=num>9</td><td class=num>-88%</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: ≥2 of the 8 agree, no All-Weather</td><td><span class=pill>paper</span></td><td class=num>+65.0%</td><td class=num>427</td><td class=num>10</td><td class=num>-90%</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Solo: ACTIVE Betting Hub</td><td><span class=pill>paper</span></td><td class=num>+62.3%</td><td class=num>310</td><td class=num>9</td><td class=num>-88%</td><td class=dim>2026-06-14</td></tr>
+<tr><td>Consensus: ≥2 of the 8 agree</td><td><span class=pill>paper</span></td><td class=num>+56.3%</td><td class=num>492</td><td class=num>10</td><td class=num>-90%</td><td class=dim>2026-06-14</td></tr>
 </table>
 <p class=note>Holdout ROI = backtest on data the finder never saw. Fwd ROI = real forward paper record (the one that counts). Trust Fwd once the bet count is high.</p>
 
 <h2>Data-gap queue — theories awaiting / using new data</h2>
 <table><tr><th>Theory</th><th>Needs</th><th>Status</th></tr>
+<tr><td>Horse Age × Staying + Hot Trainer — Staying races favour mature horses; if a hot-form trainer enters one aged 4–6, it signals they've timed a peak window tipsters exploit.</td><td class=dim>Horse age; only trainer name and hot flag available.</td><td><span class=pill>open</span></td></tr>
+<tr><td>Jockey Form × Class Drop — Jockey boasting 15%+ strike rate piloting a horse dropping 1–2 class levels signals confidence and improved match; tipsters may spot this pattern early.</td><td class=dim>Jockey's recent strike rate and prior race class of the horse; we have jockey name only.</td><td><span class=pill>open</span></td></tr>
+<tr><td>Specialist Course Trainer Hot — Trainer with 20%+ strike rate in past 14d running at a specific course they dominate (e.g. Cheltenham) compounds form + local expertise.</td><td class=dim>Trainer's historical win rate at each specific course; current data only flags overall 14-day strike rate.</td><td><span class=pill>open</span></td></tr>
 <tr><td>Course specialist + consensus — Horses with proven course form, backed by multiple tipsters, suggests tacit agreement on a venue where this horse's running style is ideally suited.</td><td class=dim>Historical course-specific form record (wins/places at this exact venue) per horse—not available in current selection fields; would need runner's past results at that course.</td><td><span class=pill>open</span></td></tr>
 <tr><td>Tipster divergence at short odds — When tipsters agree on a 2–4 shot, they're often wrong (consensus false confidence); highest ROI is 1–2 tipster picks at same odds.</td><td class=dim>Consensus count vs. result at each odds band; divergence penalty/bonus for short-priced picks by consensus size.</td><td><span class=pill>open</span></td></tr>
 <tr><td>Course specialist bias — Tipsters may systematically misprice course specialists; horses with >40% course wins should outperform advised odds.</td><td class=dim>Number of course runs and wins for each horse; course win rate vs. field win rate baseline.</td><td><span class=pill>open</span></td></tr>
@@ -57,7 +60,7 @@
 </table>
 
 <script>
-const pts=[];
+const pts=[{"x": "2026-06-14", "y": -2.0}, {"x": "2026-06-15", "y": -38.0}];
 new Chart(document.getElementById('eq'),{type:'line',
  data:{labels:pts.map(p=>p.x),datasets:[{data:pts.map(p=>p.y),borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,.1)',fill:true,tension:.2,pointRadius:0}]},
  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}});
