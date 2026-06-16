@@ -67,6 +67,22 @@ def _build_sql(rule):
         where.append("(lower(r.going) LIKE '%%soft%%' OR lower(r.going) LIKE '%%heavy%%')")
     elif gg == "goodfirm":
         where.append("(lower(r.going) LIKE '%%firm%%' OR lower(r.going) = 'good' OR lower(r.going) = 'fast')")
+    mm = sel.get("market_move")
+    extra_join = ""
+    if mm in ("steamer", "drifter"):
+        extra_join = """
+        JOIN (
+          SELECT race_id, horse_id,
+            (array_agg(p ORDER BY odds_time ASC))[1]  AS open_p,
+            (array_agg(p ORDER BY odds_time DESC))[1] AS close_p
+          FROM (SELECT race_id, horse_id, odds_time, avg(decimal) p
+                FROM ra_odds WHERE decimal > 1 GROUP BY race_id, horse_id, odds_time) _px
+          GROUP BY race_id, horse_id HAVING count(*) >= 3
+        ) mvt ON mvt.race_id = l.race_id AND mvt.horse_id = l.horse_id"""
+        if mm == "steamer":
+            where.append("mvt.close_p <= mvt.open_p * 0.95")   # shortened >=5%% (steamed in)
+        else:
+            where.append("mvt.close_p >= mvt.open_p * 1.05")   # drifted >=5%%
     cmin = int(sel.get("consensus_min", 1))
     sql = f"""
     WITH base AS (
@@ -77,7 +93,7 @@ def _build_sql(rule):
       FROM tips t
         JOIN tip_legs l   ON l.tip_reference = t.reference
         JOIN ra_results r ON r.race_id = l.race_id
-        LEFT JOIN ra_runners rr ON rr.race_id = l.race_id AND rr.horse_id = l.horse_id
+        LEFT JOIN ra_runners rr ON rr.race_id = l.race_id AND rr.horse_id = l.horse_id{extra_join}
       WHERE {' AND '.join(where)}
       GROUP BY l.race_id, l.horse_id
     )
