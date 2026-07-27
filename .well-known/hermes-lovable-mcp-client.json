@@ -1,5 +1,5 @@
 {
-  "client_id": "https://raw.githubusercontent.com/addoughty84/tipstrr-tracker/master/.well-known/hermes-lovable-mcp-client.json",
+  "client_id": "https://raw.githubusercontent.com/addoughty84/tipstrr-tracker/main/.well-known/hermes-lovable-mcp-client.json",
   "client_name": "Hermes Agent (Boothco)",
   "redirect_uris": [
     "http://127.0.0.1:8766/callback",
