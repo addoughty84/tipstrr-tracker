@@ -1,0 +1,12 @@
+{
+  "client_id": "https://raw.githubusercontent.com/addoughty84/tipstrr-tracker/main/.well-known/hermes-lovable-mcp-client.json",
+  "client_name": "Hermes Agent (Boothco)",
+  "redirect_uris": [
+    "http://127.0.0.1:8766/callback",
+    "http://localhost:8766/callback"
+  ],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "application_type": "native"
+}
